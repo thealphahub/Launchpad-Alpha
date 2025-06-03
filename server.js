@@ -19,6 +19,14 @@ app.use(express.json());
 app.use("/beta", express.static("beta")); // Sert les pages générées
 app.use("/public", express.static("public")); // Sert les mini-sites générés
 
+// 🚨 REDIRECTION PRINCIPALE
+app.get("/", (req, res) => {
+  // Redirige direct sur le launchpad WordPress
+  res.redirect("https://thealphahub.fun/launchpad");
+});
+
+// ---- Le reste du code (launch, explore, etc) ----
+
 function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
   return `
   <!DOCTYPE html>
@@ -266,7 +274,7 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
       socket.on("message", ({ user, text }) => {
         const list = document.getElementById("chat-messages");
         const li = document.createElement("li");
-        li.textContent = \`\${user}: \${text}\`;
+        li.textContent = `${user}: ${text}`;
         list.appendChild(li);
         list.scrollTop = list.scrollHeight;
       });
@@ -306,7 +314,6 @@ app.post("/launch", async (req, res) => {
   }
 });
 
-// PAGE EXPLORE
 app.get("/explore", (req, res) => {
   const betaDir = path.join(__dirname, "beta");
   const files = fs.readdirSync(betaDir).filter(file => file.endsWith(".html"));
@@ -396,65 +403,6 @@ app.get("/explore", (req, res) => {
   res.send(html);
 });
 
-// PAGE LAUNCHPAD
-app.get("/launchpad", (req, res) => {
-  const betaDir = path.join(__dirname, "beta");
-  const files = fs.readdirSync(betaDir).filter(file => file.endsWith(".html"));
-
-  let gallery = "";
-
-  for (const file of files) {
-    const content = fs.readFileSync(path.join(betaDir, file), "utf8");
-    const titleMatch = content.match(/<h1>(.*?)<\/h1>/);
-    const imgMatch = content.match(/<img src=\"(.*?)\"/);
-    const descMatch = content.match(/<p>(.*?)<\/p>/);
-
-    const title = titleMatch ? titleMatch[1] : "Unknown";
-    const img = imgMatch ? imgMatch[1] : "";
-    const desc = descMatch ? descMatch[1] : "";
-    const link = `/beta/${file}`;
-
-    gallery += `
-      <div class="card">
-        <img src="${img}" alt="${title}" />
-        <h3>${title}</h3>
-        <p>${desc}</p>
-        <a href="${link}" target="_blank">👀 View</a>
-      </div>
-    `;
-  }
-
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Launchpad - Alpha Hub</title>
-      <style>
-        body { background: #111; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        h1 { color: #00ffff; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 40px; }
-        .card { background: #1c1c1e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);}
-        .card img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; }
-        .card h3 { margin: 10px 0; color: #00ffff; }
-        .card a { display: inline-block; margin-top: 10px; padding: 8px 15px; background: #00ffff; color: black; text-decoration: none; border-radius: 5px; }
-        .cta { margin-top: 40px; }
-        .cta a { background: #00ffae; color: #111; padding: 15px 30px; border-radius: 10px; font-weight: bold; font-size: 18px; text-decoration: none; }
-      </style>
-    </head>
-    <body>
-      <h1>🚀 Launchpad - Tokens créés sur Alpha Hub</h1>
-      <div class="cta">
-        <a href="/form.html">+ Créer un token</a>
-      </div>
-      <div class="grid">
-        ${gallery}
-      </div>
-    </body>
-    </html>
-  `);
-});
-
-// SOCKET IO - CHAT
 io.on("connection", (socket) => {
   console.log("🟢 New user connected to chat");
 
