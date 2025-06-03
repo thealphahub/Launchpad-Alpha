@@ -1,0 +1,145 @@
+
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta property="og:title" content="test 2 ($TEST2) - Alpha Launchpad" />
+    <meta property="og:image" content="https://oaidalleapiprodscus.blob.core.windows.net/private/org-uhsM3TYEzcdSzxVlMcJvWVLc/user-zhodxV6oh21CHK1l5bjJMX8f/img-ruc6ayrD9V2htYBVu4QRfO6Q.png?st=2025-06-03T13%3A04%3A48Z&se=2025-06-03T15%3A04%3A48Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=cc612491-d948-4d2e-9821-2683df3719f5&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-02T19%3A16%3A22Z&ske=2025-06-03T19%3A16%3A22Z&sks=b&skv=2024-08-04&sig=ki%2BSFQ3Nd1Atvt8jVc0LnWyCiE6/49E1S8/2xZ6Ax9Y%3D" />
+    <meta property="og:description" content="A new memecoin launched from Alpha Hub 🚀" />
+    <title>test 2 ($TEST2)</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+        color: white;
+        text-align: center;
+        padding: 30px;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        background: #1e1e2f;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      }
+      img {
+        width: 100%;
+        max-width: 400px;
+        border-radius: 10px;
+        margin: 20px 0;
+      }
+      h1 {
+        font-size: 28px;
+        color: #00ffff;
+      }
+      p {
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .footer {
+        margin-top: 20px;
+        font-weight: bold;
+        color: #b0e0ff;
+      }
+      .share {
+        margin-top: 20px;
+      }
+      .share a {
+        background: #00acee;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+        display: inline-block;
+        margin-bottom: 10px;
+      }
+      .site-link {
+        background: #00ffae !important;
+        color: black !important;
+      }
+      #connect-btn {
+        padding:10px 20px;
+        font-size:16px;
+        background:#00ffff;
+        border:none;
+        border-radius:6px;
+        cursor:pointer;
+        margin-top: 20px;
+      }
+      #claim-status {
+        margin-top:10px;
+        color:#00ffae;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>test 2 ($TEST2)</h1>
+      <img src="https://oaidalleapiprodscus.blob.core.windows.net/private/org-uhsM3TYEzcdSzxVlMcJvWVLc/user-zhodxV6oh21CHK1l5bjJMX8f/img-ruc6ayrD9V2htYBVu4QRfO6Q.png?st=2025-06-03T13%3A04%3A48Z&se=2025-06-03T15%3A04%3A48Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=cc612491-d948-4d2e-9821-2683df3719f5&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-02T19%3A16%3A22Z&ske=2025-06-03T19%3A16%3A22Z&sks=b&skv=2024-08-04&sig=ki%2BSFQ3Nd1Atvt8jVc0LnWyCiE6/49E1S8/2xZ6Ax9Y%3D" alt="test 2" />
+      <p>A new memecoin launched from Alpha Hub 🚀</p>
+      <div class="footer">Launched with love 💙 from the Alpha Hub beta</div>
+      <div class="share">
+        <a href="https://twitter.com/intent/tweet?text=Check%20out%20$TEST2%20launched%20on%20Alpha%20Hub!%20http://localhost:3001/beta/test-2.html" target="_blank">🚀 Share on X</a>
+        <a class="site-link" href="/public/test-2/index.html" target="_blank">🌐 View Project Site</a>
+      </div>
+
+      <!-- 🔐 Claim Project Section -->
+      <div id="claim-section">
+        <button id="connect-btn">🔐 Claim This Project</button>
+        <p id="claim-status"></p>
+      </div>
+    </div>
+
+    <script>
+      const slug = window.location.pathname.split("/").pop().replace(".html", "");
+      const connectBtn = document.getElementById("connect-btn");
+      const status = document.getElementById("claim-status");
+
+      connectBtn.addEventListener("click", async () => {
+        if (!window.solana || !window.solana.isPhantom) {
+          alert("Phantom wallet not detected!");
+          return;
+        }
+
+        try {
+          const resp = await window.solana.connect();
+          const pubkey = resp.publicKey.toString();
+
+          const message = "Je suis le créateur du token " + slug + " - Alpha Hub";
+          const encodedMessage = new TextEncoder().encode(message);
+          const signedMessage = await window.solana.signMessage(encodedMessage, "utf8");
+
+          const payload = {
+            slug,
+            wallet: pubkey,
+            message,
+            signature: Array.from(signedMessage.signature),
+          };
+
+          const res = await fetch("http://localhost:3001/claim", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const json = await res.json();
+          if (json.success) {
+            status.innerText = "✅ Project claimed successfully!";
+            connectBtn.disabled = true;
+          } else {
+            status.innerText = "❌ Claim failed: " + json.message;
+          }
+        } catch (err) {
+          console.error(err);
+          status.innerText = "❌ Error during claim.";
+        }
+      });
+    </script>
+  </body>
+  </html>
+  
