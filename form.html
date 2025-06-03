@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alpha Launchpad</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 50px;
+      margin: 0;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: #00ffff;
+    }
+    form {
+      background: #1c1c1e;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 400px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      background: #00ffff;
+      color: #000;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #00cccc;
+    }
+    label {
+      display: block;
+      text-align: left;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🚀 Launch your memecoin (Alpha Hub Beta)</h2>
+  <form id="launchForm">
+    <label for="name">Token Name</label>
+    <input type="text" id="name" name="name" placeholder="Ex: Chill Doge" required />
+
+    <label for="ticker">Ticker</label>
+    <input type="text" id="ticker" name="ticker" placeholder="Ex: $DOGE" required />
+
+    <label for="imagePrompt">Prompt IA</label>
+    <input type="text" id="imagePrompt" name="imagePrompt" placeholder="Ex: Cartoon dog surfing on Solana" required />
+
+    <label for="description">Description</label>
+    <textarea id="description" name="description" placeholder="Ex: The chillest memecoin ever launched 🧃" rows="4"></textarea>
+
+    <button type="submit">🚀 Launch</button>
+  </form>
+
+  <script>
+    document.getElementById("launchForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        name: form.name.value,
+        ticker: form.ticker.value,
+        imagePrompt: form.imagePrompt.value,
+        description: form.description.value,
+      };
+
+      const res = await fetch("http://localhost:3001/launch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        window.open(result.url, "_blank");
+      } else {
+        alert("Error: " + result.message);
+      }
+    });
+  </script>
+</body>
+</html>

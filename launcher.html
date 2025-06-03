@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Alpha Token Launcher</title>
+</head>
+<body style="font-family: sans-serif; padding: 40px; background: #111; color: white;">
+  <h1>🚀 Launch a Token</h1>
+  <form id="launchForm">
+    <label>Name:</label><br>
+    <input type="text" name="name" value="Chill Baby"><br><br>
+
+    <label>Ticker:</label><br>
+    <input type="text" name="ticker" value="CHILL"><br><br>
+
+    <label>Image Prompt:</label><br>
+    <input type="text" name="imagePrompt" value="cool baby meme"><br><br>
+
+    <label>Description:</label><br>
+    <input type="text" name="description" value="The chillest token on Solana 😎"><br><br>
+
+    <button type="submit">🚀 Launch</button>
+  </form>
+
+  <p id="response"></p>
+
+  <script>
+    document.getElementById("launchForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        name: form.name.value,
+        ticker: form.ticker.value,
+        imagePrompt: form.imagePrompt.value,
+        description: form.description.value
+      };
+
+      const res = await fetch("http://localhost:3001/launch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const json = await res.json();
+      document.getElementById("response").innerHTML = json.success
+        ? `✅ <a href="${json.url}" target="_blank">View Token Page</a>`
+        : `❌ ${json.message}`;
+    });
+  </script>
+</body>
+</html>
