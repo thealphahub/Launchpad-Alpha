@@ -54,7 +54,7 @@ app.get("/launchpad", (req, res) => {
     <head>
       <title>Launchpad - Alpha Hub</title>
       <style>
-        body { background: #111; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        body { background: transparent; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
         h1 { color: #00ffff; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 40px; }
         .card { background: #1c1c1e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
