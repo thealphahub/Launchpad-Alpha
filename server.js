@@ -352,7 +352,7 @@ app.post("/launch", async (req, res) => {
 
     generateTokenWebsite({ name, ticker, imageUrl, description, slug });
 
-    const url = `http://localhost:3001/beta/${slug}.html`;
+    const url = `https://launchpad.thealphahub.fun/beta/${slug}.html`;
     createTokenGroup({ name, ticker, url });
 
     res.json({ success: true, url });
