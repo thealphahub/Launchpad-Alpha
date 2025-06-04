@@ -215,7 +215,7 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
       <h1>${name} ($${ticker})</h1>
       <img src="${imageUrl}" alt="${name}" />
       <p>${description}</p>
-      <div class="footer">Launched with love 💙 from the Alpha Hub beta</div>
+      <div class="footer">Powered by The Alpha Hub</div>
       <div class="share">
         <a href="https://twitter.com/intent/tweet?text=Check%20out%20$${ticker}%20launched%20on%20Alpha%20Hub!%20http://localhost:3001/beta/${slug}.html" target="_blank">🚀 Share on X</a>
         <a class="site-link" href="/public/${slug}/index.html" target="_blank">🌐 View Project Site</a>
