@@ -64,7 +64,7 @@ app.get("/launchpad", (req, res) => {
       </style>
     </head>
     <body>
-      <h1>🚀 Launchpad - Tokens créés sur Alpha Hub</h1>
+      <h1></h1>
       <div class="grid">
         ${gallery}
       </div>
