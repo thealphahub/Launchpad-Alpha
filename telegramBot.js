@@ -1,6 +1,9 @@
 // 📦 Alpha Launchpad Telegram Bot 
+require("dotenv").config(); // Charge les variables d'environnement depuis .env
+
 const TelegramBot = require("node-telegram-bot-api");
-const TOKEN = "7992326598:AAEIDDVVKWPD-WPrMVZx3lL6e71BQAyH3As";
+const TOKEN = process.env.TELEGRAM_BOT_TOKEN;  // Utilisation de la variable d'environnement
+
 const bot = new TelegramBot(TOKEN, { polling: true });
 
 // 🔔 Répond aux messages manuels (debug/test)
