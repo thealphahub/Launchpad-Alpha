@@ -397,7 +397,7 @@ app.get("/explore", (req, res) => {
       <title>Explore Memecoins - Alpha Hub</title>
       <style>
         body {
-          background: #111;
+          background: transparent;
           color: white;
           font-family: sans-serif;
           text-align: center;
