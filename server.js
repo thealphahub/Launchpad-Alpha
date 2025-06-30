@@ -14,6 +14,17 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
+const claimsFile = path.join(__dirname, "claims.json");
+let claims = {};
+if (fs.existsSync(claimsFile)) {
+  try {
+    claims = JSON.parse(fs.readFileSync(claimsFile));
+  } catch (err) {
+    console.error("Failed to parse claims file", err);
+    claims = {};
+  }
+}
+
 app.use(cors());
 app.use(express.json());
 app.use("/beta", express.static("beta")); // Sert les pages générées
@@ -355,11 +366,31 @@ app.post("/launch", async (req, res) => {
     const url = `https://launchpad.thealphahub.fun/beta/${slug}.html`;
     createTokenGroup({ name, ticker, url });
 
-    res.json({ success: true, url });
+  res.json({ success: true, url });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "An error occurred while creating the project." });
   }
+});
+
+app.post("/claim", (req, res) => {
+  const { slug, wallet, message, signature } = req.body;
+  if (!slug || !wallet || !message || !signature) {
+    return res.status(400).json({ success: false, message: "Missing fields." });
+  }
+  if (claims[slug]) {
+    return res.status(400).json({ success: false, message: "Project already claimed." });
+  }
+
+  claims[slug] = { wallet, message, signature };
+  try {
+    fs.writeFileSync(claimsFile, JSON.stringify(claims, null, 2));
+  } catch (err) {
+    console.error("Failed to write claims file", err);
+    return res.status(500).json({ success: false, message: "Could not save claim." });
+  }
+
+  res.json({ success: true });
 });
 
 app.get("/explore", (req, res) => {
