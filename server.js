@@ -9,6 +9,7 @@ const socketIO = require("socket.io");
 const { generateImageFromPrompt } = require("./imageGenerator");
 const { generateTokenWebsite } = require("./generateTokenWebsite");
 const { createTokenGroup } = require("./telegramBot");
+const { createToken, getTokenBySlug, claimToken } = require("./models/token");
 
 const app = express();
 const server = http.createServer(app);
@@ -73,6 +74,24 @@ app.get("/launchpad", (req, res) => {
   `;
 
   res.send(html);
+});
+
+app.post("/claim", async (req, res) => {
+  const { slug, wallet } = req.body;
+  try {
+    const token = await getTokenBySlug(slug);
+    if (!token) {
+      return res.status(404).json({ success: false, message: "Token not found" });
+    }
+    if (token.owner) {
+      return res.json({ success: false, message: "Already claimed" });
+    }
+    await claimToken(slug, wallet);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Error during claim" });
+  }
 });
 
 function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
@@ -351,6 +370,14 @@ app.post("/launch", async (req, res) => {
     fs.writeFileSync(filePath, htmlContent);
 
     generateTokenWebsite({ name, ticker, imageUrl, description, slug });
+
+    await createToken({
+      name,
+      ticker,
+      slug,
+      imageUrl,
+      description,
+    });
 
     const url = `https://launchpad.thealphahub.fun/beta/${slug}.html`;
     createTokenGroup({ name, ticker, url });
