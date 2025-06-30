@@ -23,15 +23,40 @@
 
   <p id="response"></p>
 
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.js"></script>
   <script>
+    const FEE_DESTINATION = "FEE_DESTINATION_PLACEHOLDER";
+    const FEE_AMOUNT = 0.1;
+
     document.getElementById("launchForm").addEventListener("submit", async function(e) {
       e.preventDefault();
+      const provider = window.solana;
+      if (!provider?.isPhantom) {
+        alert("Phantom wallet not found");
+        return;
+      }
+
+      await provider.connect();
+
+      const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+      const transaction = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey: provider.publicKey,
+          toPubkey: new solanaWeb3.PublicKey(FEE_DESTINATION),
+          lamports: FEE_AMOUNT * solanaWeb3.LAMPORTS_PER_SOL,
+        })
+      );
+      transaction.feePayer = provider.publicKey;
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const signed = await provider.signAndSendTransaction(transaction);
+
       const form = e.target;
       const data = {
         name: form.name.value,
         ticker: form.ticker.value,
         imagePrompt: form.imagePrompt.value,
-        description: form.description.value
+        description: form.description.value,
+        txSignature: signed.signature
       };
 
       const res = await fetch("http://localhost:3001/launch", {
@@ -42,7 +67,7 @@
 
       const json = await res.json();
       document.getElementById("response").innerHTML = json.success
-        ? `✅ <a href="${json.url}" target="_blank">View Token Page</a>`
+        ? `✅ <a href="${json.url}" target="_blank">View Token Page</a>\nToken: ${json.tokenAddress}`
         : `❌ ${json.message}`;
     });
   </script>

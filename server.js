@@ -9,6 +9,7 @@ const socketIO = require("socket.io");
 const { generateImageFromPrompt } = require("./imageGenerator");
 const { generateTokenWebsite } = require("./generateTokenWebsite");
 const { createTokenGroup } = require("./telegramBot");
+const { createToken, verifyFee } = require("./solanaService");
 
 const app = express();
 const server = http.createServer(app);
@@ -333,9 +334,13 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
 }
 
 app.post("/launch", async (req, res) => {
-  const { name, ticker, imagePrompt, description } = req.body;
+  const { name, ticker, imagePrompt, description, txSignature } = req.body;
 
   try {
+    if (!(await verifyFee(txSignature))) {
+      return res.status(400).json({ success: false, message: "Fee not verified" });
+    }
+
     const imageUrl = await generateImageFromPrompt(imagePrompt || name);
     const slug = name.toLowerCase().replace(/\s+/g, "-");
 
@@ -352,10 +357,20 @@ app.post("/launch", async (req, res) => {
 
     generateTokenWebsite({ name, ticker, imageUrl, description, slug });
 
+    const tokenAddress = await createToken();
+
+    const tokensFile = path.join(__dirname, 'tokens.json');
+    let tokens = [];
+    if (fs.existsSync(tokensFile)) {
+      tokens = JSON.parse(fs.readFileSync(tokensFile));
+    }
     const url = `https://launchpad.thealphahub.fun/beta/${slug}.html`;
+    tokens.push({ name, ticker, address: tokenAddress, url });
+    fs.writeFileSync(tokensFile, JSON.stringify(tokens, null, 2));
+
     createTokenGroup({ name, ticker, url });
 
-    res.json({ success: true, url });
+    res.json({ success: true, url, tokenAddress });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "An error occurred while creating the project." });
