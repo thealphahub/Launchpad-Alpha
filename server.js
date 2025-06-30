@@ -9,6 +9,21 @@ const socketIO = require("socket.io");
 const { generateImageFromPrompt } = require("./imageGenerator");
 const { generateTokenWebsite } = require("./generateTokenWebsite");
 const { createTokenGroup } = require("./telegramBot");
+const { PublicKey } = require("@solana/web3.js");
+
+const claimsPath = path.join(__dirname, "claims.json");
+let claims = {};
+if (fs.existsSync(claimsPath)) {
+  try {
+    claims = JSON.parse(fs.readFileSync(claimsPath, "utf8"));
+  } catch (e) {
+    claims = {};
+  }
+}
+
+function saveClaims() {
+  fs.writeFileSync(claimsPath, JSON.stringify(claims, null, 2));
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -269,10 +284,10 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
           });
           const json = await res.json();
           if (json.success) {
-            status.innerText = "✅ Project claimed successfully!";
+            status.innerText = "✅ " + (json.message || "Project claimed successfully!");
             connectBtn.disabled = true;
           } else {
-            status.innerText = "❌ Claim failed: " + json.message;
+            status.innerText = "❌ " + json.message;
           }
         } catch (err) {
           console.error(err);
@@ -359,6 +374,31 @@ app.post("/launch", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "An error occurred while creating the project." });
+  }
+});
+
+app.post("/claim", async (req, res) => {
+  const { slug, wallet, message, signature } = req.body;
+  if (!slug || !wallet || !message || !signature) {
+    return res.status(400).json({ success: false, message: "Missing parameters" });
+  }
+  if (claims[slug]) {
+    return res.status(400).json({ success: false, message: "Project already claimed" });
+  }
+  try {
+    const publicKey = new PublicKey(wallet);
+    const msgBytes = new TextEncoder().encode(message);
+    const sigBytes = Uint8Array.from(signature);
+    const verified = await publicKey.verify(msgBytes, sigBytes);
+    if (!verified) {
+      return res.status(400).json({ success: false, message: "Invalid signature" });
+    }
+    claims[slug] = wallet;
+    saveClaims();
+    return res.json({ success: true, message: "Project claimed for " + wallet });
+  } catch (e) {
+    console.error(e);
+    return res.status(400).json({ success: false, message: "Verification failed" });
   }
 });
 
