@@ -6,6 +6,8 @@ const fs = require("fs");
 const path = require("path");
 const http = require("http");
 const socketIO = require("socket.io");
+const nacl = require("tweetnacl");
+const bs58 = require("bs58");
 const { generateImageFromPrompt } = require("./imageGenerator");
 const { generateTokenWebsite } = require("./generateTokenWebsite");
 const { createTokenGroup } = require("./telegramBot");
@@ -548,6 +550,27 @@ app.post("/like/:slug", (req, res) => {
   t.likes = (t.likes || 0) + 1;
   saveTokens(tokens);
   res.json({ likes: t.likes });
+});
+
+app.post("/claim", (req, res) => {
+  const { slug, wallet, message, signature } = req.body || {};
+  const tokens = loadTokens();
+  const token = tokens[slug];
+  if (!token) return res.status(404).json({ success: false, message: "Unknown project" });
+  try {
+    const msgBytes = new TextEncoder().encode(message);
+    const sigBytes = Uint8Array.from(signature);
+    const pubKey = bs58.decode(wallet);
+    if (!nacl.sign.detached.verify(msgBytes, sigBytes, pubKey)) {
+      return res.status(400).json({ success: false, message: "Invalid signature" });
+    }
+    token.owner = wallet;
+    saveTokens(tokens);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 });
 
 io.on("connection", (socket) => {
