@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>Alpha Token Launcher</title>
+  <script src="/env.js"></script>
 </head>
 <body style="font-family: sans-serif; padding: 40px; background: #111; color: white;">
   <h1>🚀 Launch a Token</h1>
@@ -34,7 +35,7 @@
         description: form.description.value
       };
 
-      const res = await fetch("http://localhost:3001/launch", {
+      const res = await fetch(window.BASE_URL + "/launch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)

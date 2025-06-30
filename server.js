@@ -10,6 +10,8 @@ const { generateImageFromPrompt } = require("./imageGenerator");
 const { generateTokenWebsite } = require("./generateTokenWebsite");
 const { createTokenGroup } = require("./telegramBot");
 
+const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
@@ -18,6 +20,12 @@ app.use(cors());
 app.use(express.json());
 app.use("/beta", express.static("beta")); // Sert les pages générées
 app.use("/public", express.static("public")); // Sert les mini-sites générés
+
+// Expose environment variables to the frontend
+app.get("/env.js", (req, res) => {
+  res.type("application/javascript");
+  res.send(`window.BASE_URL = "${BASE_URL}";`);
+});
 
 // Route pour afficher la page launchpad avec la liste des tokens
 app.get("/launchpad", (req, res) => {
@@ -86,6 +94,7 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
     <meta property="og:image" content="${imageUrl}" />
     <meta property="og:description" content="${description}" />
     <title>${name} ($${ticker})</title>
+    <script src="/env.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
       body {
@@ -217,7 +226,7 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
       <p>${description}</p>
       <div class="footer">Powered by The Alpha Hub</div>
       <div class="share">
-        <a href="https://twitter.com/intent/tweet?text=Check%20out%20$${ticker}%20launched%20on%20Alpha%20Hub!%20http://localhost:3001/beta/${slug}.html" target="_blank">🚀 Share on X</a>
+        <a href="https://twitter.com/intent/tweet?text=Check%20out%20$${ticker}%20launched%20on%20Alpha%20Hub!%20${BASE_URL}/beta/${slug}.html" target="_blank">🚀 Share on X</a>
         <a class="site-link" href="/public/${slug}/index.html" target="_blank">🌐 View Project Site</a>
       </div>
       <!-- 🔐 Claim Project Section -->
@@ -262,7 +271,7 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
             message,
             signature: Array.from(signedMessage.signature),
           };
-          const res = await fetch("http://localhost:3001/claim", {
+          const res = await fetch(window.BASE_URL + "/claim", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -352,7 +361,7 @@ app.post("/launch", async (req, res) => {
 
     generateTokenWebsite({ name, ticker, imageUrl, description, slug });
 
-    const url = `https://launchpad.thealphahub.fun/beta/${slug}.html`;
+    const url = `${BASE_URL}/beta/${slug}.html`;
     createTokenGroup({ name, ticker, url });
 
     res.json({ success: true, url });
@@ -469,5 +478,5 @@ io.on("connection", (socket) => {
 });
 
 server.listen(3001, () => {
-  console.log("✅ Alpha Launchpad server + chat running at http://localhost:3001");
+  console.log(`✅ Alpha Launchpad server + chat running at ${BASE_URL}`);
 });
