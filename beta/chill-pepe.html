@@ -8,6 +8,7 @@
     <meta property="og:image" content="https://oaidalleapiprodscus.blob.core.windows.net/private/org-uhsM3TYEzcdSzxVlMcJvWVLc/user-zhodxV6oh21CHK1l5bjJMX8f/img-9kpEWg8uDlHcOvLJop1NmLfk.png?st=2025-06-03T12%3A37%3A15Z&se=2025-06-03T14%3A37%3A15Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=cc612491-d948-4d2e-9821-2683df3719f5&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-02T19%3A19%3A19Z&ske=2025-06-03T19%3A19%3A19Z&sks=b&skv=2024-08-04&sig=3uit0Uq%2BnloHx5AKxg%2Bi1BhZrVJ0qalJp48WKwWb7hc%3D" />
     <meta property="og:description" content="The chillest frog on the blockchain 🐸🧃" />
     <title>Chill Pepe ($$CHILL)</title>
+    <script src="/env.js"></script>
     <style>
       body {
         margin: 0;
@@ -114,7 +115,7 @@
             signature: Array.from(signedMessage.signature),
           };
 
-          const res = await fetch("http://localhost:3001/claim", {
+          const res = await fetch(window.BASE_URL + "/claim", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)

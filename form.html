@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Alpha Launchpad</title>
+  <script src="/env.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -87,7 +88,7 @@
         description: form.description.value,
       };
 
-      const res = await fetch("http://localhost:3001/launch", {
+      const res = await fetch(window.BASE_URL + "/launch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
