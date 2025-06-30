@@ -1,8 +1,12 @@
 // generateTokenWebsite.js
 const fs = require("fs");
 const path = require("path");
+const { escapeHtml } = require("./utils");
 
 function generateTokenWebsite({ name, ticker, imageUrl, description, slug }) {
+  const safeName = escapeHtml(name);
+  const safeTicker = escapeHtml(ticker);
+  const safeDescription = escapeHtml(description);
   const folderPath = path.join("public", slug);
   if (!fs.existsSync("public")) fs.mkdirSync("public");
   if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
@@ -13,7 +17,7 @@ function generateTokenWebsite({ name, ticker, imageUrl, description, slug }) {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>${name} - ${ticker}</title>
+    <title>${safeName} - ${safeTicker}</title>
     <style>
       body { font-family: sans-serif; background: #111; color: white; text-align: center; padding: 40px; }
       .card { background: #222; padding: 30px; border-radius: 12px; max-width: 600px; margin: auto; }
@@ -24,9 +28,9 @@ function generateTokenWebsite({ name, ticker, imageUrl, description, slug }) {
   </head>
   <body>
     <div class="card">
-      <h1>${name} ($${ticker})</h1>
-      <img src="${imageUrl}" alt="${name}" />
-      <p>${description}</p>
+      <h1>${safeName} ($${safeTicker})</h1>
+      <img src="${imageUrl}" alt="${safeName}" />
+      <p>${safeDescription}</p>
       <div class="buttons">
         <a href="#">💬 Join Telegram</a>
         <a href="#">🔎 View on Solscan</a>
