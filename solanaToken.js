@@ -1,4 +1,4 @@
-const { Connection, clusterApiUrl, Keypair, PublicKey } = require('@solana/web3.js');
+const { Connection, clusterApiUrl, Keypair } = require('@solana/web3.js');
 const { createMint } = require('@solana/spl-token');
 const bs58 = require('bs58');
 
