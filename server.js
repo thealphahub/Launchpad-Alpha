@@ -9,6 +9,9 @@ const socketIO = require("socket.io");
 const { generateImageFromPrompt } = require("./imageGenerator");
 const { generateTokenWebsite } = require("./generateTokenWebsite");
 const { createTokenGroup } = require("./telegramBot");
+const nacl = require("tweetnacl");
+const { PublicKey } = require("@solana/web3.js");
+const { createSolanaToken } = require("./solanaToken");
 
 const app = express();
 const server = http.createServer(app);
@@ -359,6 +362,26 @@ app.post("/launch", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "An error occurred while creating the project." });
+  }
+});
+
+app.post("/claim", async (req, res) => {
+  const { slug, wallet, message, signature } = req.body;
+  if (!slug || !wallet || !signature || !message) {
+    return res.status(400).json({ success: false, message: "Missing parameters" });
+  }
+  try {
+    const pubkey = new PublicKey(wallet);
+    const msg = new TextEncoder().encode(message);
+    const sig = Uint8Array.from(signature);
+    if (!nacl.sign.detached.verify(msg, sig, pubkey.toBytes())) {
+      return res.status(400).json({ success: false, message: "Signature invalid" });
+    }
+    const tokenAddress = await createSolanaToken(pubkey);
+    return res.json({ success: true, token: tokenAddress });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Token creation failed" });
   }
 });
 
