@@ -9,6 +9,7 @@ const socketIO = require("socket.io");
 const { generateImageFromPrompt } = require("./imageGenerator");
 const { generateTokenWebsite } = require("./generateTokenWebsite");
 const { createTokenGroup } = require("./telegramBot");
+const { mintToken } = require("./solanaService");
 
 const app = express();
 const server = http.createServer(app);
@@ -359,6 +360,17 @@ app.post("/launch", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "An error occurred while creating the project." });
+  }
+});
+
+app.post("/mint", async (req, res) => {
+  try {
+    const { decimals, initialSupply } = req.body;
+    const address = await mintToken({ decimals, initialSupply });
+    res.json({ success: true, address });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Minting failed" });
   }
 });
 
