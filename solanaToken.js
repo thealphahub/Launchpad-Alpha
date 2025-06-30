@@ -10,7 +10,9 @@ function loadKeypair() {
 }
 
 async function createSolanaToken(authority) {
-  const connection = new Connection(clusterApiUrl(process.env.SOLANA_CLUSTER || 'devnet'), 'confirmed');
+  const rpcUrl =
+    process.env.SOLANA_RPC_URL || 'https://rpc.helius.xyz/?api-key=YOUR_API_KEY';
+  const connection = new Connection(rpcUrl, 'confirmed');
   const payer = loadKeypair();
   const mint = await createMint(connection, payer, authority, null, 9);
   return mint.toBase58();
