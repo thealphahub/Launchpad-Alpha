@@ -491,6 +491,12 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3001, () => {
-  console.log("✅ Alpha Launchpad server + chat running at http://localhost:3001");
-});
+if (require.main === module) {
+  server.listen(3001, () => {
+    console.log(
+      "✅ Alpha Launchpad server + chat running at http://localhost:3001"
+    );
+  });
+}
+
+module.exports = app;
