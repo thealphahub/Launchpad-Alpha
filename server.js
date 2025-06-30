@@ -9,6 +9,18 @@ const socketIO = require("socket.io");
 const { generateImageFromPrompt } = require("./imageGenerator");
 const { generateTokenWebsite } = require("./generateTokenWebsite");
 const { createTokenGroup } = require("./telegramBot");
+const DATA_DIR = path.join(__dirname, "data");
+const DATA_FILE = path.join(DATA_DIR, "tokens.json");
+
+function loadTokens() {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, JSON.stringify({}));
+  return JSON.parse(fs.readFileSync(DATA_FILE));
+}
+
+function saveTokens(tokens) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(tokens, null, 2));
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -87,6 +99,7 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
     <meta property="og:description" content="${description}" />
     <title>${name} ($${ticker})</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
         margin: 0;
@@ -208,6 +221,20 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
         border-radius: 5px;
         margin-left: 10px;
       }
+      #progress-container {
+        margin-top:20px;
+        background:#333;
+        border-radius:8px;
+        overflow:hidden;
+      }
+      #progress-bar {
+        height:10px;
+        background:#00ffff;
+        width:0%;
+      }
+      #badges span {
+        margin:0 4px;
+      }
     </style>
   </head>
   <body>
@@ -215,10 +242,16 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
       <h1>${name} ($${ticker})</h1>
       <img src="${imageUrl}" alt="${name}" />
       <p>${description}</p>
+      <canvas id="priceChart" height="120"></canvas>
+      <div id="progress-container"><div id="progress-bar"></div></div>
+      <div id="badges"></div>
+      <div id="juice"></div>
       <div class="footer">Powered by The Alpha Hub</div>
       <div class="share">
         <a href="https://twitter.com/intent/tweet?text=Check%20out%20$${ticker}%20launched%20on%20Alpha%20Hub!%20http://localhost:3001/beta/${slug}.html" target="_blank">🚀 Share on X</a>
         <a class="site-link" href="/public/${slug}/index.html" target="_blank">🌐 View Project Site</a>
+        <button id="likeBtn">❤️ <span id="likeCount">0</span></button>
+        <a id="buyBtn" href="#">🛒 Buy via Jupiter</a>
       </div>
       <!-- 🔐 Claim Project Section -->
       <div id="claim-section">
@@ -326,6 +359,41 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
         list.appendChild(li);
         list.scrollTop = list.scrollHeight;
       });
+
+      async function loadInfo() {
+        const res = await fetch(`/token/${slug}`);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('likeCount').innerText = data.likes || 0;
+          document.getElementById('juice').innerText = `Juice Score: ${data.juice || 0}`;
+          document.getElementById('progress-bar').style.width = `${data.progress || 0}%`;
+          if (data.badges) {
+            document.getElementById('badges').innerHTML = data.badges.map(b => `<span>${b}</span>`).join('');
+          }
+          if (data.prices) {
+            drawChart(data.prices);
+          }
+        }
+      }
+
+      function drawChart(points){
+        const ctx = document.getElementById('priceChart');
+        new Chart(ctx, {
+          type: 'line',
+          data: { labels: points.map((_,i)=>i), datasets:[{data: points, borderColor:'#00ffff', fill:false}]},
+          options: {scales:{x:{display:false},y:{display:false}}, plugins:{legend:{display:false}}}
+        });
+      }
+
+      document.getElementById('likeBtn').onclick = async () => {
+        const r = await fetch(`/like/${slug}`, { method: 'POST' });
+        if (r.ok) {
+          const j = await r.json();
+          document.getElementById('likeCount').innerText = j.likes;
+        }
+      };
+
+      loadInfo();
     </script>
   </body>
   </html>
@@ -351,6 +419,21 @@ app.post("/launch", async (req, res) => {
     fs.writeFileSync(filePath, htmlContent);
 
     generateTokenWebsite({ name, ticker, imageUrl, description, slug });
+
+    const tokens = loadTokens();
+    tokens[slug] = {
+      name,
+      ticker,
+      imageUrl,
+      description,
+      slug,
+      likes: 0,
+      juice: Math.floor(Math.random()*100),
+      progress: 0,
+      prices: Array.from({length:10},()=>Math.random()*1),
+      badges: ["✅ Clean Creator"]
+    };
+    saveTokens(tokens);
 
     const url = `https://launchpad.thealphahub.fun/beta/${slug}.html`;
     createTokenGroup({ name, ticker, url });
@@ -449,6 +532,22 @@ app.get("/explore", (req, res) => {
   `;
 
   res.send(html);
+});
+
+app.get("/token/:slug", (req, res) => {
+  const tokens = loadTokens();
+  const info = tokens[req.params.slug];
+  if (!info) return res.status(404).json({});
+  res.json(info);
+});
+
+app.post("/like/:slug", (req, res) => {
+  const tokens = loadTokens();
+  const t = tokens[req.params.slug];
+  if (!t) return res.status(404).json({});
+  t.likes = (t.likes || 0) + 1;
+  saveTokens(tokens);
+  res.json({ likes: t.likes });
 });
 
 io.on("connection", (socket) => {
