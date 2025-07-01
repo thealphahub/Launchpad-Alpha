@@ -9,6 +9,9 @@ const socketIO = require("socket.io");
 const { generateImageFromPrompt } = require("./imageGenerator");
 const { generateTokenWebsite } = require("./generateTokenWebsite");
 const { createTokenGroup } = require("./telegramBot");
+const nacl = require("tweetnacl");
+const { PublicKey } = require("@solana/web3.js");
+const { createSolanaToken } = require("./solanaToken");
 
 const app = express();
 const server = http.createServer(app);
@@ -262,7 +265,7 @@ function generateStyledHtml({ name, ticker, imageUrl, description, slug }) {
             message,
             signature: Array.from(signedMessage.signature),
           };
-          const res = await fetch("http://localhost:3001/claim", {
+          const res = await fetch("${process.env.API_BASE_URL || ''}/claim", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -359,6 +362,26 @@ app.post("/launch", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "An error occurred while creating the project." });
+  }
+});
+
+app.post("/claim", async (req, res) => {
+  const { slug, wallet, message, signature } = req.body;
+  if (!slug || !wallet || !signature || !message) {
+    return res.status(400).json({ success: false, message: "Missing parameters" });
+  }
+  try {
+    const pubkey = new PublicKey(wallet);
+    const msg = new TextEncoder().encode(message);
+    const sig = Uint8Array.from(signature);
+    if (!nacl.sign.detached.verify(msg, sig, pubkey.toBytes())) {
+      return res.status(400).json({ success: false, message: "Signature invalid" });
+    }
+    const tokenAddress = await createSolanaToken(pubkey);
+    return res.json({ success: true, token: tokenAddress });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Token creation failed" });
   }
 });
 
@@ -468,6 +491,12 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3001, () => {
-  console.log("✅ Alpha Launchpad server + chat running at http://localhost:3001");
-});
+if (require.main === module) {
+  server.listen(3001, () => {
+    console.log(
+      "✅ Alpha Launchpad server + chat running at http://localhost:3001"
+    );
+  });
+}
+
+module.exports = app;
