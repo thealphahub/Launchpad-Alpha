@@ -1,0 +1,6 @@
+# Ignore environment files and directories
+.env
+beta/
+public/
+# Optionally ignore node modules
+node_modules/
