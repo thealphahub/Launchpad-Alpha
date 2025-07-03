@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +27,7 @@
       width: 90%;
       max-width: 400px;
     }
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 10px;
       margin-top: 10px;
@@ -56,19 +55,47 @@
       font-weight: bold;
       margin-top: 10px;
     }
+    .img-preview {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .img-preview img {
+      max-width: 120px;
+      max-height: 120px;
+      border-radius: 8px;
+      margin-top: 10px;
+      box-shadow: 0 2px 10px #0006;
+    }
   </style>
 </head>
 <body>
   <h2>🚀 Launch your memecoin (Alpha Hub Beta)</h2>
-  <form id="launchForm">
+  <form id="launchForm" enctype="multipart/form-data">
     <label for="name">Token Name</label>
     <input type="text" id="name" name="name" placeholder="Ex: Chill Doge" required />
 
     <label for="ticker">Ticker</label>
     <input type="text" id="ticker" name="ticker" placeholder="Ex: $DOGE" required />
 
-    <label for="imagePrompt">Prompt IA</label>
-    <input type="text" id="imagePrompt" name="imagePrompt" placeholder="Ex: Cartoon dog surfing on Solana" required />
+    <label>Image du Token</label>
+    <div style="display:flex; gap:16px; margin-bottom:16px;">
+      <label>
+        <input type="radio" name="imageMode" value="ia" checked /> Générer par IA
+      </label>
+      <label>
+        <input type="radio" name="imageMode" value="upload" /> Télécharger une image
+      </label>
+    </div>
+
+    <div id="ia-section">
+      <label for="imagePrompt">Prompt IA</label>
+      <input type="text" id="imagePrompt" name="imagePrompt" placeholder="Ex: Cartoon dog surfing on Solana"/>
+    </div>
+    <div id="upload-section" style="display:none;">
+      <label for="imageFile">Téléchargez une image (PNG/JPG, max 1Mo)</label>
+      <input type="file" id="imageFile" name="imageFile" accept="image/*"/>
+      <div class="img-preview" id="imgPreview"></div>
+    </div>
 
     <label for="description">Description</label>
     <textarea id="description" name="description" placeholder="Ex: The chillest memecoin ever launched 🧃" rows="4"></textarea>
@@ -77,20 +104,66 @@
   </form>
 
   <script>
+    // Handle mode switch (IA or Upload)
+    const iaSection = document.getElementById('ia-section');
+    const uploadSection = document.getElementById('upload-section');
+    const radios = document.querySelectorAll('input[name="imageMode"]');
+    radios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        if(this.value === "ia") {
+          iaSection.style.display = "";
+          uploadSection.style.display = "none";
+        } else {
+          iaSection.style.display = "none";
+          uploadSection.style.display = "";
+        }
+      });
+    });
+
+    // Show image preview on upload
+    document.getElementById('imageFile').addEventListener('change', function(e){
+      const preview = document.getElementById('imgPreview');
+      preview.innerHTML = "";
+      if(e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        if(file.size > 1*1024*1024) {
+          alert("Image trop lourde, max 1Mo !");
+          e.target.value = '';
+          return;
+        }
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        preview.appendChild(img);
+      }
+    });
+
     document.getElementById("launchForm").addEventListener("submit", async function(e) {
       e.preventDefault();
       const form = e.target;
-      const data = {
-        name: form.name.value,
-        ticker: form.ticker.value,
-        imagePrompt: form.imagePrompt.value,
-        description: form.description.value,
-      };
+      // Récupère le mode choisi
+      const mode = form.imageMode.value;
+      const formData = new FormData();
+
+      formData.append('name', form.name.value);
+      formData.append('ticker', form.ticker.value);
+      formData.append('description', form.description.value);
+
+      if(mode === "ia") {
+        formData.append('imageMode', 'ia');
+        formData.append('imagePrompt', form.imagePrompt.value);
+      } else {
+        formData.append('imageMode', 'upload');
+        const file = form.imageFile.files[0];
+        if(!file) {
+          alert("Veuillez uploader une image.");
+          return;
+        }
+        formData.append('imageFile', file);
+      }
 
       const res = await fetch("http://localhost:3001/launch", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: formData,
       });
 
       const result = await res.json();
